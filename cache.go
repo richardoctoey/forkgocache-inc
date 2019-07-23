@@ -138,16 +138,16 @@ func (c *cache) Get(k string) (interface{}, bool) {
 // Get an item from the cache. Returns the item or nil, and a bool indicating
 // whether the key was found.
 func (c *cache) GetInc(k string) (interface{}, bool) {
-	c.mu.RLock()
+	c.mu.Lock()
 	// "Inlining" of get and Expired
 	item, found := c.items[k]
 	if !found {
-		c.mu.RUnlock()
+		c.mu.Unlock()
 		return nil, false
 	}
 	if item.Expiration > 0 {
 		if time.Now().UnixNano() > item.Expiration {
-			c.mu.RUnlock()
+			c.mu.Unlock()
 			return nil, false
 		}
 	}
@@ -161,7 +161,7 @@ func (c *cache) GetInc(k string) (interface{}, bool) {
 		Object:     itemint,
 		Expiration: -1,
 	}
-	c.mu.RUnlock()
+	c.mu.Unlock()
 	return item.Object, true
 }
 
