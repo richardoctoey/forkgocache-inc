@@ -43,6 +43,7 @@ type cache struct {
 	mu                sync.RWMutex
 	onEvicted         func(string, interface{})
 	janitor           *janitor
+	lowest_init             uint32
 }
 
 // Add an item to the cache, replacing any existing item. If the duration is 0
@@ -58,6 +59,29 @@ func (c *cache) Set(k string, x interface{}, d time.Duration) {
 		e = time.Now().Add(d).UnixNano()
 	}
 	c.mu.Lock()
+	c.items[k] = Item{
+		Object:     x,
+		Expiration: e,
+	}
+	// TODO: Calls to mu.Unlock are currently not deferred because defer
+	// adds ~200 ns (as of go1.)
+	c.mu.Unlock()
+}
+
+// Add an item to the cache, replacing any existing item. If the duration is 0
+// (DefaultExpiration), the cache's default expiration time is used. If it is -1
+// (NoExpiration), the item never expires.
+func (c *cache) SetTid(k string, x interface{}, d time.Duration) {
+	// "Inlining" of set
+	var e int64
+	if d == DefaultExpiration {
+		d = c.defaultExpiration
+	}
+	if d > 0 {
+		e = time.Now().Add(d).UnixNano()
+	}
+	c.mu.Lock()
+	c.lowest_init = ((x.(uint32))-1)
 	c.items[k] = Item{
 		Object:     x,
 		Expiration: e,
