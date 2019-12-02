@@ -175,14 +175,13 @@ func (c *cache) GetInc(k string) (interface{}, bool) {
 			return nil, false
 		}
 	}
-	itemint := item.Object.(uint32)-c.lowest_init
+	itemint := item.Object.(uint32)
 	if itemint < 16777215 {
 		itemint += 1
 	} else {
 		itemint = uint32(1) //reset
 		item.Object = uint32(1)
 	}
-	itemint += c.lowest_init
 	c.items[k] = Item{
 		Object:     itemint,
 		Expiration: -1,
