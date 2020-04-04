@@ -43,7 +43,8 @@ type cache struct {
 	mu                sync.RWMutex
 	onEvicted         func(string, interface{})
 	janitor           *janitor
-	lowest_init             uint32
+	lowest_init       uint32
+	highest_init      uint32
 }
 
 // Add an item to the cache, replacing any existing item. If the duration is 0
@@ -81,7 +82,8 @@ func (c *cache) SetTid(k string, x interface{}, d time.Duration) {
 		e = time.Now().Add(d).UnixNano()
 	}
 	c.mu.Lock()
-	c.lowest_init = ((x.(uint32))-1)
+	c.lowest_init  = (x.(uint32))
+	c.highest_init = c.lowest_init+uint32(100000)
 	c.items[k] = Item{
 		Object:     x,
 		Expiration: e,
@@ -176,11 +178,11 @@ func (c *cache) GetInc(k string) (interface{}, bool) {
 		}
 	}
 	itemint := item.Object.(uint32)
-	if itemint < 16777215 {
-		itemint += 1
-	} else {
-		itemint = uint32(1) //reset
-		item.Object = uint32(1)
+	itemint += 1
+	if itemint > c.highest_init {
+		//reset
+		itemint = c.lowest_init
+		item.Object = c.lowest_init
 	}
 	c.items[k] = Item{
 		Object:     itemint,
