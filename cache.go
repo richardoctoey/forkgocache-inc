@@ -1130,7 +1130,7 @@ func (c *cache) Eligible(k string, d time.Duration) bool {
 	defer c.mu.Unlock()
 
 	_, found := c.items[k]
-	if !found {
+	if found {
 		return false
 	}
 
