@@ -82,7 +82,7 @@ func (c *cache) SetTid(k string, x interface{}, d time.Duration) {
 		e = time.Now().Add(d).UnixNano()
 	}
 	c.mu.Lock()
-	c.Lowest_init  = (x.(uint32))
+	c.Lowest_init = (x.(uint32))
 	c.items[k] = Item{
 		Object:     x,
 		Expiration: e,
@@ -1122,6 +1122,29 @@ func (c *cache) Flush() {
 	c.mu.Lock()
 	c.items = map[string]Item{}
 	c.mu.Unlock()
+}
+
+func (c *cache) Eligible(k string, d time.Duration) bool {
+	var e int64
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	_, found := c.items[k]
+	if !found {
+		return false
+	}
+
+	if d == DefaultExpiration {
+		d = c.defaultExpiration
+	}
+	if d > 0 {
+		e = time.Now().Add(d).UnixNano()
+	}
+	c.items[k] = Item{
+		Object:     1,
+		Expiration: e,
+	}
+	return true
 }
 
 type janitor struct {
